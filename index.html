@@ -72,14 +72,15 @@
 
     /* ---- ช่อง dd/mm/yyyy ของเราเอง คลุมปฏิทิน native ไว้ข้างใต้ (คุมฟอร์แมตได้เต็มที่ ไม่ขึ้นกับ locale เครื่อง) ---- */
     .datetime-wrap { position: relative; }
-    .datetime-wrap input[readonly] { cursor: pointer; background: var(--surface-2); pointer-events: none; }
+    .datetime-wrap input[readonly] { cursor: pointer; background: var(--surface-2); }
     .datetime-wrap input.datetime-hidden-trigger {
         position: absolute;
-        inset: 0;
+        width: 1px;
+        height: 1px;
         opacity: 0;
-        cursor: pointer;
-        padding: 0;
+        pointer-events: none;
         border: none;
+        padding: 0;
     }
 
     /* ---- ปุ่ม ---- */
@@ -306,6 +307,18 @@
     const closedAtInput = document.getElementById("closedAtInput");
     const timeDisplay = document.getElementById("timeDisplay");
     const closedAtDisplay = document.getElementById("closedAtDisplay");
+
+    // v4: FIX - เปิดปฏิทินด้วย showPicker() ตรงๆ แทนการซ่อนด้วย CSS แล้วหวังให้คลิกทะลุ
+    // (วิธีเดิมมีปัญหากับมือถือบางรุ่นโดยเฉพาะ iOS จนกดเปิดไม่ได้เลย)
+    function openNativePicker(nativeInput) {
+        if (typeof nativeInput.showPicker === "function") {
+            try { nativeInput.showPicker(); return; } catch (e) { /* บาง browser ยัง fallback ต่อได้ */ }
+        }
+        // fallback สำหรับ browser ที่ไม่รองรับ showPicker() (Safari รุ่นเก่ากว่า 16.4)
+        nativeInput.focus();
+    }
+    timeDisplay.addEventListener("click", () => openNativePicker(timeInput));
+    closedAtDisplay.addEventListener("click", () => openNativePicker(closedAtInput));
     const timeRaw = document.getElementById("timeRaw");
     const closedAtRaw = document.getElementById("closedAtRaw");
     const ycVal1Input = document.getElementById("ycVal1Input");
