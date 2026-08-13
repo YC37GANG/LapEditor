@@ -351,7 +351,16 @@
     }
     function dateLabelOf(key) {
         const lap = lapsData[key];
-        return lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
+        if (!lap.time) return "(ไม่มีเวลา)";
+        const d = new Date(lap.time);
+        const pad = (n) => String(n).padStart(2, "0");
+        const dd = pad(d.getDate());
+        const mm = pad(d.getMonth() + 1);
+        const yyyy = d.getFullYear();
+        const hh = pad(d.getHours());
+        const mi = pad(d.getMinutes());
+        const ss = pad(d.getSeconds());
+        return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
     }
     function searchTextOf(key) {
         const lap = lapsData[key];
