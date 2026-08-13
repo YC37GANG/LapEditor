@@ -148,7 +148,7 @@
     <div class="brand-header">
         <div class="brand-icon">🛠️</div>
         <h1>YC37 Gang <span>Lap Editor</span></h1>
-        <p class="subtitle">แก้ไขเวลาเริ่ม/ปิด และค่า YC ของแต่ละหม้อ</p>
+        <p class="subtitle">แก้ไขเวลาเริ่ม/ปิด และยา ของแต่ละหม้อ</p>
     </div>
 
     <!-- ด่านรหัสผ่านก่อนเข้าใช้งาน (client-side เท่านั้น กันคนไม่ตั้งใจเข้ามาเจอ ไม่ใช่ความปลอดภัยจริงจัง) -->
@@ -168,7 +168,7 @@
             <label for="lapSearchInput">🔍 ค้นหา Lap</label>
             <div class="lap-search-wrap" id="lapSearchWrap">
                 <span class="lap-search-icon">🔎</span>
-                <input type="text" id="lapSearchInput" placeholder="พิมพ์เลข lap, วันที่ หรือเลข YC..." autocomplete="off">
+                <input type="text" id="lapSearchInput" placeholder="พิมพ์เลข lap หม้อ, วันที่ หรือเลข ยา..." autocomplete="off">
                 <div class="lap-dropdown" id="lapDropdown"></div>
             </div>
             <div class="selected-lap-chip" id="selectedLapChip">
@@ -376,7 +376,7 @@
             const opt = document.createElement("div");
             opt.className = "lap-option" + (key === selectedKey ? " selected" : "");
             opt.innerHTML = `<span class="tag">lap${lap.lapNumber ?? "?"}</span>
-                <span class="meta">${dateLabelOf(key)}${yc ? ` · <span class="yc-tag">YC ${yc}</span>` : ""}</span>`;
+                <span class="meta">${dateLabelOf(key)}${yc ? ` · <span class="yc-tag">ยา ${yc}</span>` : ""}</span>`;
             opt.addEventListener("click", () => selectLap(key));
             lapDropdown.appendChild(opt);
         });
@@ -389,7 +389,7 @@
         const yc = ycLabelOf(key);
 
         selectedLapTag.textContent = `lap${lap.lapNumber ?? "?"}`;
-        selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · YC ${yc}` : "");
+        selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · ยา ${yc}` : "");
         selectedLapChip.classList.add("show");
 
         lapSearchInput.value = "";
@@ -490,9 +490,9 @@
 
             // อัปเดต chip ที่เลือกไว้ให้ตรงกับข้อมูลใหม่ทันที
             const yc = ycLabelOf(key);
-            selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · YC ${yc}` : "");
+            selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · ยา ${yc}` : "");
 
-            showStatus("บันทึกสำเร็จแล้ว ✓ (เวลา + YC)", false);
+            showStatus("บันทึกสำเร็จแล้ว ✓ (เวลา + ยา)", false);
             saveBtn.disabled = false;
             saveBtn.innerHTML = "💾 บันทึกการแก้ไข";
         }).catch((err) => {
@@ -511,7 +511,7 @@
             closedAtInput.value = "";
             closedAtRaw.textContent = "(ยัง live อยู่)";
             delete lapsData[key].closedAt;
-            selectedLapMeta.textContent = dateLabelOf(key) + (ycLabelOf(key) ? ` · YC ${ycLabelOf(key)}` : "");
+            selectedLapMeta.textContent = dateLabelOf(key) + (ycLabelOf(key) ? ` · ยา ${ycLabelOf(key)}` : "");
             showStatus("ลบเวลาปิดแล้ว ✓", false);
         }).catch((err) => {
             showStatus("ลบไม่สำเร็จ: " + err.message, true);
