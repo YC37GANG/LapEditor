@@ -85,7 +85,7 @@
 <body>
 <div class="container">
     <h1>🔧 เครื่องมือแก้ไข Lap</h1>
-    <p class="subtitle">แก้เวลาเริ่ม/ปิดของ Lap โดยตรง — ใช้ได้ทั้งมือถือและคอม</p>
+    <p class="subtitle">แก้เวลาเริ่ม/ปิดของแต่ละหม้อโดยตรง</p>
 
     <!-- v2: ด่านรหัสผ่านก่อนเข้าใช้งาน (client-side เท่านั้น กันคนไม่ตั้งใจเข้ามาเจอ ไม่ใช่ความปลอดภัยจริงจัง) -->
     <div class="card" id="passGate">
@@ -251,9 +251,14 @@
         setTimeout(() => { statusMsg.className = "status-msg"; }, 3500);
     }
 
-    // โหลดรายชื่อ Lap ทั้งหมดมาใส่ dropdown (เรียงใหม่->เก่า)
-    db.ref("/kratom_laps").once("value").then((snapshot) => {
-        lapsData = snapshot.val() || {};
+    // โหลดรายชื่อ Lap ทั้งหมด + ค่า YC ของทุก Lap มาใส่ dropdown พร้อมกัน (เรียงใหม่->เก่า)
+    let ycData = {};
+    Promise.all([
+        db.ref("/kratom_laps").once("value"),
+        db.ref("/kratom_yc").once("value")
+    ]).then(([lapsSnap, ycSnap]) => {
+        lapsData = lapsSnap.val() || {};
+        ycData = ycSnap.val() || {};
         const keys = Object.keys(lapsData).sort().reverse(); // push key เรียงตามเวลาสร้างอยู่แล้ว
         if (keys.length === 0) {
             lapSelect.innerHTML = `<option value="">ไม่พบ Lap เลย</option>`;
@@ -262,7 +267,17 @@
         lapSelect.innerHTML = `<option value="">— เลือก Lap —</option>` + keys.map((key) => {
             const lap = lapsData[key];
             const dateLabel = lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
-            return `<option value="${key}">lap${lap.lapNumber ?? "?"} — ${dateLabel}</option>`;
+            // v3: ต่อท้ายด้วยเลข YC ถ้ามี (แบบเดียวกับ dropdown ค้นหา lap ในหน้าเว็บหลัก)
+            const yc = ycData[key];
+            let ycLabel = "";
+            if (yc) {
+                const has1 = yc.val1 !== undefined && yc.val1 !== null && yc.val1 !== "";
+                const has2 = yc.val2 !== undefined && yc.val2 !== null && yc.val2 !== "";
+                if (has1 && has2) ycLabel = ` · ยา ${yc.val1},${yc.val2}`;
+                else if (has1) ycLabel = ` · ยา ${yc.val1}`;
+                else if (has2) ycLabel = ` · ยา ${yc.val2}`;
+            }
+            return `<option value="${key}">lap${lap.lapNumber ?? "?"} — ${dateLabel}${ycLabel}</option>`;
         }).join("");
     }).catch((err) => {
         lapSelect.innerHTML = `<option value="">โหลดไม่สำเร็จ: ${err.message}</option>`;
@@ -284,16 +299,10 @@
         closedAtInput.value = epochToLocalInput(lap.closedAt);
         closedAtRaw.textContent = lap.closedAt || "(ยัง live อยู่)";
 
-        // ดึงค่า YC ของ lap นี้มาโชว์ด้วย (เก็บแยก path /kratom_yc)
-        ycVal1Input.value = "";
-        ycVal2Input.value = "";
-        db.ref("/kratom_yc/" + key).once("value").then((snap) => {
-            const ycData = snap.val();
-            if (ycData) {
-                ycVal1Input.value = ycData.val1 || "";
-                ycVal2Input.value = ycData.val2 || "";
-            }
-        });
+        // ใช้ค่า YC ที่โหลดแคชไว้แล้วตอนสร้าง dropdown (ไม่ต้องดึงซ้ำ)
+        const ycEntry = ycData[key];
+        ycVal1Input.value = ycEntry ? (ycEntry.val1 || "") : "";
+        ycVal2Input.value = ycEntry ? (ycEntry.val2 || "") : "";
     });
 
     // อัปเดตตัวเลข epoch ที่โชว์ไว้ให้เห็นแบบสดๆ ตอนแก้ picker
@@ -340,6 +349,18 @@
             db.ref("/kratom_yc/" + key).update(ycUpdates)
         ]).then(() => {
             lapsData[key] = { ...lapsData[key], ...updates };
+            ycData[key] = ycUpdates;
+            // อัปเดตข้อความใน dropdown ให้ตรงกับ YC ใหม่ทันที ไม่ต้องโหลดหน้าใหม่
+            const opt = lapSelect.querySelector(`option[value="${key}"]`);
+            if (opt) {
+                const lap = lapsData[key];
+                const dateLabel = lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
+                let ycLabel = "";
+                if (ycVal1 && ycVal2) ycLabel = ` · ยา ${ycVal1},${ycVal2}`;
+                else if (ycVal1) ycLabel = ` · ยา ${ycVal1}`;
+                else if (ycVal2) ycLabel = ` · ยา ${ycVal2}`;
+                opt.textContent = `lap${lap.lapNumber ?? "?"} — ${dateLabel}${ycLabel}`;
+            }
             showStatus("บันทึกสำเร็จแล้ว ✓ (ทั้งเวลาและ YC)", false);
             saveBtn.disabled = false;
             saveBtn.textContent = "💾 บันทึกการแก้ไข";
