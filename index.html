@@ -389,18 +389,28 @@
         if (has2) return String(yc.val2);
         return "";
     }
+    // v4: โชว์ช่วงเวลาเริ่ม-ปิดแบบเดียวกับเว็บหลัก - ไม่ซ้ำวันที่ถ้าวันเดียวกัน, กำกับทั้งคู่ถ้าข้ามวัน
     function dateLabelOf(key) {
         const lap = lapsData[key];
         if (!lap.time) return "(ไม่มีเวลา)";
-        const d = new Date(lap.time);
         const pad = (n) => String(n).padStart(2, "0");
-        const dd = pad(d.getDate());
-        const mm = pad(d.getMonth() + 1);
-        const yyyy = d.getFullYear();
-        const hh = pad(d.getHours());
-        const mi = pad(d.getMinutes());
-        const ss = pad(d.getSeconds());
-        return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+        const start = new Date(lap.time);
+        const startClock = `${pad(start.getHours())}:${pad(start.getMinutes())}:${pad(start.getSeconds())}`;
+        const startDate = `${pad(start.getDate())}/${pad(start.getMonth() + 1)}/${start.getFullYear()}`;
+
+        if (!lap.closedAt) {
+            return `${startClock} (${startDate}) — ยัง live อยู่`;
+        }
+
+        const end = new Date(lap.closedAt);
+        const endClock = `${pad(end.getHours())}:${pad(end.getMinutes())}:${pad(end.getSeconds())}`;
+        const endDate = `${pad(end.getDate())}/${pad(end.getMonth() + 1)}/${end.getFullYear()}`;
+
+        const sameDay = startDate === endDate;
+        if (sameDay) {
+            return `${startClock}-${endClock} (${startDate})`;
+        }
+        return `${startClock} (${startDate}) — ${endClock} (${endDate})`;
     }
     function searchTextOf(key) {
         const lap = lapsData[key];
