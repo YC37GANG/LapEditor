@@ -358,10 +358,35 @@
         return `lap${lap.lapNumber ?? ""} ${dateLabelOf(key)} ${ycLabelOf(key)}`.toLowerCase();
     }
 
+    // เช็คว่า lap นี้ตรงกับคำค้นไหม - รองรับคำนำหน้าเจาะจง (ยา5 / yc5 / lap5 / l5) นอกเหนือจากค้นกว้างแบบเดิม
+    function matchesQuery(key, rawQuery) {
+        const q = (rawQuery || "").trim().toLowerCase();
+        if (!q) return true;
+
+        // เจาะจง YC: "ยา5" หรือ "yc5" -> ต้องตรงเป๊ะกับค่า YC ช่องใดช่องหนึ่ง
+        const ycMatch = q.match(/^(?:ยา|yc)\s*(\d+)$/);
+        if (ycMatch) {
+            const target = ycMatch[1];
+            const yc = ycData[key];
+            if (!yc) return false;
+            return String(yc.val1) === target || String(yc.val2) === target;
+        }
+
+        // เจาะจงเลข Lap: "lap5" หรือ "l5" -> ต้องตรงเป๊ะกับเลข lap เท่านั้น
+        const lapMatch = q.match(/^(?:lap|l)\s*(\d+)$/);
+        if (lapMatch) {
+            const target = lapMatch[1];
+            return String(lapsData[key].lapNumber) === target;
+        }
+
+        // ไม่มีคำนำหน้าเจาะจง - ใช้การค้นแบบกว้างเหมือนเดิม (หาทุกอย่างที่มีคำนี้ปน)
+        return searchTextOf(key).includes(q);
+    }
+
     // ---- Combobox ค้นหา Lap (พิมพ์กรองได้ตามเลข lap / วันที่ / YC) -----
     function renderLapDropdown(query) {
-        const q = (query || "").trim().toLowerCase();
-        const matched = q ? allKeys.filter((k) => searchTextOf(k).includes(q)) : allKeys;
+        const q = (query || "").trim();
+        const matched = q ? allKeys.filter((k) => matchesQuery(k, q)) : allKeys;
 
         if (matched.length === 0) {
             lapDropdown.innerHTML = `<div class="lap-no-result">ไม่เจอ Lap ที่ตรงกับ "${query}"</div>`;
