@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>เครื่องมือแก้ไข Lap Editor — YC37 Gang</title>
+<title>Lap Editor — YC37 Gang</title>
 <style>
     :root {
         --bg: #05060F;
         --surface: #0E1020;
-        --surface-2: #141728;
+        --surface-2: #161A2E;
         --border: #242A47;
+        --border-soft: #1C2038;
         --green: #2DD4EE;
+        --green-dim: #0F3A44;
         --amber: #FBBF74;
         --cyan: #B794F6;
         --red: #FF6B8B;
         --text: #E8ECF7;
         --text-dim: #8790AC;
+        --text-faint: #545C7A;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,139 +26,222 @@
         background-color: var(--bg);
         color: var(--text);
         margin: 0;
-        padding: 20px 16px 60px;
-        background-image: radial-gradient(circle at 50% 0%, rgba(183,148,246,0.10), transparent 60%);
+        padding: 24px 16px 60px;
+        background-image:
+            radial-gradient(circle at 50% 0%, rgba(183,148,246,0.12), transparent 55%),
+            radial-gradient(1px 1px at 15% 20%, #fff, transparent),
+            radial-gradient(1px 1px at 80% 15%, #fff, transparent),
+            radial-gradient(1.5px 1.5px at 60% 8%, #fff, transparent),
+            radial-gradient(1px 1px at 30% 60%, #fff, transparent),
+            radial-gradient(1px 1px at 90% 70%, #fff, transparent);
+        background-repeat: no-repeat, repeat, repeat, repeat, repeat, repeat;
+        background-size: 100% 100%, 300px 300px, 300px 300px, 300px 300px, 300px 300px, 300px 300px;
+        background-attachment: fixed;
+        min-height: 100vh;
     }
     .container { max-width: 440px; margin: 0 auto; }
-    h1 { font-size: 18px; color: var(--green); text-align: center; margin: 0 0 4px; }
-    .subtitle { font-size: 12px; color: var(--text-dim); text-align: center; margin: 0 0 20px; }
 
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    /* ---- หัวเรื่อง ---- */
+    .brand-header { text-align: center; margin-bottom: 22px; }
+    .brand-icon { font-size: 30px; margin-bottom: 4px; }
+    h1 { font-size: 19px; color: var(--text); margin: 0 0 4px; font-weight: 800; letter-spacing: 0.3px; }
+    h1 span { color: var(--green); }
+    .subtitle { font-size: 12.5px; color: var(--text-dim); margin: 0; }
 
-    label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.3px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
 
-    select, input[type="datetime-local"] {
+    label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 700; letter-spacing: 0.3px; }
+
+    input[type="text"], input[type="password"], input[type="datetime-local"] {
         width: 100%;
         background: var(--surface-2);
         border: 1px solid var(--border);
         color: var(--text);
-        padding: 12px 10px;
-        border-radius: 10px;
+        padding: 13px 14px;
+        border-radius: 12px;
         font-size: 15px;
         font-family: inherit;
-        margin-bottom: 16px;
+        transition: border-color 0.15s;
     }
-    select:focus, input:focus { outline: none; border-color: var(--cyan); }
-    select:disabled, input:disabled { opacity: 0.4; }
+    input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(183,148,246,0.15); }
+    input::placeholder { color: var(--text-faint); }
+    input:disabled { opacity: 0.4; }
 
-    .field-group { margin-bottom: 4px; }
+    .field-group { margin-bottom: 16px; }
     .field-group:last-of-type { margin-bottom: 0; }
 
+    /* ---- ปุ่ม ---- */
     .btn {
         width: 100%;
-        padding: 14px;
-        border-radius: 12px;
+        padding: 15px;
+        border-radius: 13px;
         border: none;
         font-family: inherit;
         font-size: 15px;
         font-weight: 700;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.1s, opacity 0.15s;
     }
-    .btn-save { background: var(--green); color: #06140c; }
-    .btn-save:disabled { opacity: 0.35; cursor: default; }
-    .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); margin-top: 10px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: linear-gradient(135deg, var(--green), #4FE0A8); color: #06140c; box-shadow: 0 4px 14px rgba(45,212,238,0.25); }
+    .btn-primary:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+    .btn-outline-danger { background: transparent; border: 1px solid rgba(255,107,139,0.4); color: var(--red); margin-top: 10px; }
 
-    .status-msg { text-align: center; font-size: 13px; padding: 10px; border-radius: 10px; margin-top: 12px; display: none; }
+    /* ---- หน้าจอกรอกรหัส ---- */
+    .pass-card { text-align: center; }
+    .pass-icon-wrap { width: 56px; height: 56px; border-radius: 50%; background: rgba(183,148,246,0.12); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 14px; }
+    .pass-card label { justify-content: center; }
+    .pass-input-wrap { position: relative; margin-bottom: 16px; }
+    .pass-input-wrap input { padding-right: 46px; text-align: center; letter-spacing: 2px; }
+    .pass-toggle { position: absolute; right: 4px; top: 4px; bottom: 4px; width: 40px; background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; border-radius: 8px; }
+    .pass-toggle:hover { background: var(--surface-2); color: var(--text); }
+
+    /* ---- สถานะ ---- */
+    .status-msg { text-align: center; font-size: 13px; padding: 11px; border-radius: 10px; margin-top: 12px; display: none; font-weight: 600; }
     .status-msg.show { display: block; }
-    .status-msg.ok { background: rgba(45,212,238,0.10); color: var(--green); border: 1px solid var(--green); }
-    .status-msg.err { background: rgba(255,107,139,0.10); color: var(--red); border: 1px solid var(--red); }
+    .status-msg.ok { background: rgba(45,212,238,0.10); color: var(--green); border: 1px solid rgba(45,212,238,0.3); }
+    .status-msg.err { background: rgba(255,107,139,0.10); color: var(--red); border: 1px solid rgba(255,107,139,0.3); }
 
-    .raw-preview { font-size: 11px; color: var(--text-dim); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin-top: -8px; margin-bottom: 16px; word-break: break-all; }
-    .empty-hint { text-align: center; color: var(--text-dim); font-size: 13px; padding: 30px 10px; }
+    .raw-preview { font-size: 10.5px; color: var(--text-faint); margin-top: 6px; word-break: break-all; }
+    .empty-hint { text-align: center; color: var(--text-dim); font-size: 13px; padding: 26px 10px; }
+    .empty-hint-icon { font-size: 24px; display: block; margin-bottom: 8px; opacity: 0.6; }
 
-    .yc-combo { position: relative; margin-bottom: 16px; }
-    .yc-combo input { margin-bottom: 0; }
-    .yc-dropdown { position: absolute; top: 105%; left: 0; right: 0; background: #10151F; border: 1px solid var(--border); border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,0.5); display: none; }
+    /* ---- combobox ค้นหา Lap ---- */
+    .lap-search-wrap { position: relative; }
+    .lap-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 14px; pointer-events: none; }
+    .lap-search-wrap input { padding-left: 38px; }
+    .lap-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #10151F; border: 1px solid var(--border); border-radius: 12px; max-height: 260px; overflow-y: auto; z-index: 30; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; }
+    .lap-dropdown.show { display: block; }
+    .lap-option { padding: 12px 14px; cursor: pointer; border-bottom: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 2px; }
+    .lap-option:last-child { border-bottom: none; }
+    .lap-option:hover, .lap-option:active { background: rgba(183,148,246,0.10); }
+    .lap-option.selected { background: rgba(45,212,238,0.08); }
+    .lap-option .tag { color: var(--cyan); font-weight: 700; font-size: 13.5px; }
+    .lap-option .meta { color: var(--text-dim); font-size: 12px; }
+    .lap-option .meta .yc-tag { color: var(--amber); font-weight: 600; }
+    .lap-no-result { padding: 18px 14px; text-align: center; color: var(--text-faint); font-size: 13px; }
+    .selected-lap-chip { display: none; align-items: center; justify-content: space-between; background: var(--surface-2); border: 1px solid var(--green-dim); border-radius: 12px; padding: 11px 14px; margin-top: 10px; }
+    .selected-lap-chip.show { display: flex; }
+    .selected-lap-chip .tag { color: var(--green); font-weight: 700; font-size: 14px; }
+    .selected-lap-chip .meta { color: var(--text-dim); font-size: 11.5px; margin-top: 2px; }
+    .selected-lap-chip button { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+    .selected-lap-chip button:hover { color: var(--red); }
+
+    /* ---- combobox YC ---- */
+    .yc-combo { position: relative; }
+    .yc-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #10151F; border: 1px solid var(--border); border-radius: 12px; max-height: 200px; overflow-y: auto; z-index: 20; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; }
     .yc-dropdown.show { display: block; }
-    .yc-option { padding: 10px; text-align: center; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border); }
+    .yc-option { padding: 11px; text-align: center; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border-soft); font-weight: 600; }
     .yc-option:last-child { border-bottom: none; }
-    .yc-option:hover, .yc-option:active { background: rgba(183,148,246,0.12); }
+    .yc-option:hover, .yc-option:active { background: rgba(183,148,246,0.12); color: var(--cyan); }
+
+    .yc-row { display: flex; gap: 10px; }
+    .yc-row .field-group { flex: 1; margin-bottom: 0; }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔧 เครื่องมือแก้ไข Lap</h1>
-    <p class="subtitle">แก้เวลาเริ่ม/ปิดของแต่ละหม้อโดยตรง</p>
+    <div class="brand-header">
+        <div class="brand-icon">🛠️</div>
+        <h1>YC37 Gang <span>Lap Editor</span></h1>
+        <p class="subtitle">แก้ไขเวลาเริ่ม/ปิด และค่า YC ของแต่ละหม้อ</p>
+    </div>
 
-    <!-- v2: ด่านรหัสผ่านก่อนเข้าใช้งาน (client-side เท่านั้น กันคนไม่ตั้งใจเข้ามาเจอ ไม่ใช่ความปลอดภัยจริงจัง) -->
-    <div class="card" id="passGate">
-        <div class="field-group">
-            <label for="passInput">ใส่รหัสผ่านก่อนเข้าใช้งาน</label>
-            <input type="password" id="passInput" placeholder="รหัสผ่าน" autocomplete="off">
+    <!-- ด่านรหัสผ่านก่อนเข้าใช้งาน (client-side เท่านั้น กันคนไม่ตั้งใจเข้ามาเจอ ไม่ใช่ความปลอดภัยจริงจัง) -->
+    <div class="card pass-card" id="passGate">
+        <div class="pass-icon-wrap">🔒</div>
+        <label for="passInput">รหัสผ่านผู้ดูแล</label>
+        <div class="pass-input-wrap">
+            <input type="password" id="passInput" placeholder="กรอกรหัสผ่าน" autocomplete="off">
+            <button type="button" class="pass-toggle" id="passToggle">👁</button>
         </div>
-        <button class="btn btn-save" id="passBtn">🔓 เข้าใช้งาน</button>
+        <button class="btn btn-primary" id="passBtn">🔓 ปลดล็อก</button>
         <div class="status-msg" id="passStatusMsg"></div>
     </div>
 
     <div id="mainTool" style="display:none;">
-    <div class="card">
-        <div class="field-group">
-            <label for="lapSelect">เลือก Lap</label>
-            <select id="lapSelect">
-                <option value="">— กำลังโหลดรายชื่อ Lap... —</option>
-            </select>
+        <div class="card">
+            <label for="lapSearchInput">🔍 ค้นหา Lap</label>
+            <div class="lap-search-wrap" id="lapSearchWrap">
+                <span class="lap-search-icon">🔎</span>
+                <input type="text" id="lapSearchInput" placeholder="พิมพ์เลข lap, วันที่ หรือเลข YC..." autocomplete="off">
+                <div class="lap-dropdown" id="lapDropdown"></div>
+            </div>
+            <div class="selected-lap-chip" id="selectedLapChip">
+                <div>
+                    <div class="tag" id="selectedLapTag"></div>
+                    <div class="meta" id="selectedLapMeta"></div>
+                </div>
+                <button type="button" id="clearSelectionBtn" title="ยกเลิกการเลือก">✕</button>
+            </div>
         </div>
 
-        <div id="editArea" style="display:none;">
+        <div class="card" id="editCard" style="display:none;">
             <div class="field-group">
-                <label for="timeInput">เวลาเริ่ม (time)</label>
+                <label for="timeInput">🕐 เวลาเริ่ม</label>
                 <input type="datetime-local" id="timeInput" step="1">
                 <div class="raw-preview">epoch ms: <span id="timeRaw">-</span></div>
             </div>
 
             <div class="field-group">
-                <label for="closedAtInput">เวลาปิด (closedAt) — เว้นว่างได้ถ้ายัง live อยู่</label>
+                <label for="closedAtInput">🏁 เวลาปิด (เว้นว่างได้ถ้ายัง live อยู่)</label>
                 <input type="datetime-local" id="closedAtInput" step="1">
                 <div class="raw-preview">epoch ms: <span id="closedAtRaw">-</span></div>
             </div>
 
-            <div class="field-group">
-                <label for="ycVal1Input">ยาขวดที่ 1 (YC)</label>
-                <div class="yc-combo" id="ycCombo1">
-                    <input type="text" inputmode="numeric" id="ycVal1Input" placeholder="-" autocomplete="off">
-                    <div class="yc-dropdown" id="ycDropdown1"></div>
+            <div class="yc-row field-group">
+                <div class="field-group">
+                    <label for="ycVal1Input">💊 ยาขวดที่ 1</label>
+                    <div class="yc-combo" id="ycCombo1">
+                        <input type="text" inputmode="numeric" id="ycVal1Input" placeholder="-" autocomplete="off">
+                        <div class="yc-dropdown" id="ycDropdown1"></div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label for="ycVal2Input">💊 ยาขวดที่ 2</label>
+                    <div class="yc-combo" id="ycCombo2">
+                        <input type="text" inputmode="numeric" id="ycVal2Input" placeholder="-" autocomplete="off">
+                        <div class="yc-dropdown" id="ycDropdown2"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="field-group">
-                <label for="ycVal2Input">ยาขวดที่ 2 (YC)</label>
-                <div class="yc-combo" id="ycCombo2">
-                    <input type="text" inputmode="numeric" id="ycVal2Input" placeholder="-" autocomplete="off">
-                    <div class="yc-dropdown" id="ycDropdown2"></div>
-                </div>
-            </div>
-
-            <button class="btn btn-save" id="saveBtn">💾 บันทึกการแก้ไข</button>
-            <button class="btn btn-danger" id="clearClosedBtn">ลบเวลาปิด (ทำให้กลับเป็น live)</button>
+            <button class="btn btn-primary" id="saveBtn" style="margin-top: 18px;">💾 บันทึกการแก้ไข</button>
+            <button class="btn btn-outline-danger" id="clearClosedBtn">🔄 ลบเวลาปิด (ทำให้กลับเป็น live กินอยู่)</button>
         </div>
 
-        <div id="emptyHint" class="empty-hint">เลือก Lap ด้านบนก่อน เพื่อเริ่มแก้ไข</div>
+        <div class="card" id="emptyHintCard">
+            <div class="empty-hint">
+                <span class="empty-hint-icon">🗂️</span>
+                ค้นหาและเลือก Lap ด้านบนก่อน เพื่อเริ่มแก้ไข
+            </div>
+        </div>
 
         <div class="status-msg" id="statusMsg"></div>
-    </div>
     </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
-    // v2: ด่านรหัสผ่าน (client-side เท่านั้น - แค่กันคนไม่ตั้งใจเข้ามาเจอ) -----
+    // ---- ด่านรหัสผ่าน (client-side เท่านั้น - แค่กันคนไม่ตั้งใจเข้ามาเจอ) -----
     const EDITOR_PASSWORD = "1234yc37"; // แก้รหัสผ่านตรงนี้ได้เลยตามใจชอบ
     const passGate = document.getElementById("passGate");
     const mainTool = document.getElementById("mainTool");
     const passInput = document.getElementById("passInput");
+    const passToggle = document.getElementById("passToggle");
     const passBtn = document.getElementById("passBtn");
     const passStatusMsg = document.getElementById("passStatusMsg");
+
+    passToggle.addEventListener("click", () => {
+        const showing = passInput.type === "text";
+        passInput.type = showing ? "password" : "text";
+        passToggle.textContent = showing ? "👁" : "🙈";
+    });
 
     function unlockTool() {
         passGate.style.display = "none";
@@ -167,16 +253,16 @@
         if (passInput.value === EDITOR_PASSWORD) {
             unlockTool();
         } else {
-            passStatusMsg.textContent = "รหัสผ่านไม่ถูกต้อง";
+            passStatusMsg.textContent = "รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง";
             passStatusMsg.className = "status-msg show err";
             passInput.value = "";
+            passInput.focus();
         }
     }
 
     passBtn.addEventListener("click", tryUnlock);
     passInput.addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
 
-    // ถ้าเคยปลดล็อกไว้แล้วใน session นี้ ไม่ต้องให้กรอกซ้ำ
     if (sessionStorage.getItem("lapEditorUnlocked") === "1") {
         unlockTool();
     }
@@ -188,9 +274,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const lapSelect = document.getElementById("lapSelect");
-    const editArea = document.getElementById("editArea");
-    const emptyHint = document.getElementById("emptyHint");
+    const lapSearchInput = document.getElementById("lapSearchInput");
+    const lapSearchWrap = document.getElementById("lapSearchWrap");
+    const lapDropdown = document.getElementById("lapDropdown");
+    const selectedLapChip = document.getElementById("selectedLapChip");
+    const selectedLapTag = document.getElementById("selectedLapTag");
+    const selectedLapMeta = document.getElementById("selectedLapMeta");
+    const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+
+    const editCard = document.getElementById("editCard");
+    const emptyHintCard = document.getElementById("emptyHintCard");
     const timeInput = document.getElementById("timeInput");
     const closedAtInput = document.getElementById("closedAtInput");
     const timeRaw = document.getElementById("timeRaw");
@@ -206,8 +299,11 @@
     const statusMsg = document.getElementById("statusMsg");
 
     let lapsData = {};
+    let ycData = {};
+    let allKeys = [];
+    let selectedKey = null;
 
-    // v3: สร้าง YC combobox (dropdown ตัวเลข 10-1 แบบเดียวกับเว็บหลัก) -----
+    // ---- YC combobox (dropdown ตัวเลข 10-1) -----
     function buildYcDropdown(dropdownEl, input) {
         for (let n = 10; n >= 1; n--) {
             const opt = document.createElement("div");
@@ -222,101 +318,145 @@
     }
     buildYcDropdown(ycDropdown1, ycVal1Input);
     buildYcDropdown(ycDropdown2, ycVal2Input);
-
     ycVal1Input.addEventListener("focus", () => ycDropdown1.classList.add("show"));
     ycVal2Input.addEventListener("focus", () => ycDropdown2.classList.add("show"));
-    document.addEventListener("click", (e) => {
-        if (!ycCombo1.contains(e.target)) ycDropdown1.classList.remove("show");
-        if (!ycCombo2.contains(e.target)) ycDropdown2.classList.remove("show");
-    });
-    // -----------------------------------------------------------------------
 
-    // แปลง epoch ms -> ค่าสำหรับใส่ใน <input type="datetime-local"> (ใช้เวลาท้องถิ่นของเบราว์เซอร์)
+    // แปลง epoch ms -> ค่าสำหรับใส่ใน <input type="datetime-local">
     function epochToLocalInput(ms) {
         if (!ms) return "";
         const d = new Date(ms);
         const pad = (n) => String(n).padStart(2, "0");
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
-
-    // แปลงค่าจาก <input type="datetime-local"> กลับเป็น epoch ms
     function localInputToEpoch(value) {
         if (!value) return null;
         return new Date(value).getTime();
     }
-
     function showStatus(msg, isError) {
         statusMsg.textContent = msg;
         statusMsg.className = "status-msg show " + (isError ? "err" : "ok");
         setTimeout(() => { statusMsg.className = "status-msg"; }, 3500);
     }
 
-    // โหลดรายชื่อ Lap ทั้งหมด + ค่า YC ของทุก Lap มาใส่ dropdown พร้อมกัน (เรียงใหม่->เก่า)
-    let ycData = {};
-    Promise.all([
-        db.ref("/kratom_laps").once("value"),
-        db.ref("/kratom_yc").once("value")
-    ]).then(([lapsSnap, ycSnap]) => {
-        lapsData = lapsSnap.val() || {};
-        ycData = ycSnap.val() || {};
-        const keys = Object.keys(lapsData).sort().reverse(); // push key เรียงตามเวลาสร้างอยู่แล้ว
-        if (keys.length === 0) {
-            lapSelect.innerHTML = `<option value="">ไม่พบ Lap เลย</option>`;
-            return;
-        }
-        lapSelect.innerHTML = `<option value="">— เลือก Lap —</option>` + keys.map((key) => {
-            const lap = lapsData[key];
-            const dateLabel = lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
-            // v3: ต่อท้ายด้วยเลข YC ถ้ามี (แบบเดียวกับ dropdown ค้นหา lap ในหน้าเว็บหลัก)
-            const yc = ycData[key];
-            let ycLabel = "";
-            if (yc) {
-                const has1 = yc.val1 !== undefined && yc.val1 !== null && yc.val1 !== "";
-                const has2 = yc.val2 !== undefined && yc.val2 !== null && yc.val2 !== "";
-                if (has1 && has2) ycLabel = ` · ยา ${yc.val1},${yc.val2}`;
-                else if (has1) ycLabel = ` · ยา ${yc.val1}`;
-                else if (has2) ycLabel = ` · ยา ${yc.val2}`;
-            }
-            return `<option value="${key}">lap${lap.lapNumber ?? "?"} — ${dateLabel}${ycLabel}</option>`;
-        }).join("");
-    }).catch((err) => {
-        lapSelect.innerHTML = `<option value="">โหลดไม่สำเร็จ: ${err.message}</option>`;
-    });
-
-    lapSelect.addEventListener("change", () => {
-        const key = lapSelect.value;
-        if (!key) {
-            editArea.style.display = "none";
-            emptyHint.style.display = "block";
-            return;
-        }
+    // สร้างข้อความ label + ข้อความสำหรับค้นหาของ lap หนึ่งอัน (ใช้ทั้งแสดงผลและกรอง)
+    function ycLabelOf(key) {
+        const yc = ycData[key];
+        if (!yc) return "";
+        const has1 = yc.val1 !== undefined && yc.val1 !== null && yc.val1 !== "";
+        const has2 = yc.val2 !== undefined && yc.val2 !== null && yc.val2 !== "";
+        if (has1 && has2) return `${yc.val1},${yc.val2}`;
+        if (has1) return String(yc.val1);
+        if (has2) return String(yc.val2);
+        return "";
+    }
+    function dateLabelOf(key) {
         const lap = lapsData[key];
-        editArea.style.display = "block";
-        emptyHint.style.display = "none";
+        return lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
+    }
+    function searchTextOf(key) {
+        const lap = lapsData[key];
+        return `lap${lap.lapNumber ?? ""} ${dateLabelOf(key)} ${ycLabelOf(key)}`.toLowerCase();
+    }
+
+    // ---- Combobox ค้นหา Lap (พิมพ์กรองได้ตามเลข lap / วันที่ / YC) -----
+    function renderLapDropdown(query) {
+        const q = (query || "").trim().toLowerCase();
+        const matched = q ? allKeys.filter((k) => searchTextOf(k).includes(q)) : allKeys;
+
+        if (matched.length === 0) {
+            lapDropdown.innerHTML = `<div class="lap-no-result">ไม่เจอ Lap ที่ตรงกับ "${query}"</div>`;
+            lapDropdown.classList.add("show");
+            return;
+        }
+
+        lapDropdown.innerHTML = "";
+        matched.slice(0, 40).forEach((key) => {
+            const lap = lapsData[key];
+            const yc = ycLabelOf(key);
+            const opt = document.createElement("div");
+            opt.className = "lap-option" + (key === selectedKey ? " selected" : "");
+            opt.innerHTML = `<span class="tag">lap${lap.lapNumber ?? "?"}</span>
+                <span class="meta">${dateLabelOf(key)}${yc ? ` · <span class="yc-tag">YC ${yc}</span>` : ""}</span>`;
+            opt.addEventListener("click", () => selectLap(key));
+            lapDropdown.appendChild(opt);
+        });
+        lapDropdown.classList.add("show");
+    }
+
+    function selectLap(key) {
+        selectedKey = key;
+        const lap = lapsData[key];
+        const yc = ycLabelOf(key);
+
+        selectedLapTag.textContent = `lap${lap.lapNumber ?? "?"}`;
+        selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · YC ${yc}` : "");
+        selectedLapChip.classList.add("show");
+
+        lapSearchInput.value = "";
+        lapDropdown.classList.remove("show");
+
+        editCard.style.display = "block";
+        emptyHintCard.style.display = "none";
 
         timeInput.value = epochToLocalInput(lap.time);
         timeRaw.textContent = lap.time || "-";
         closedAtInput.value = epochToLocalInput(lap.closedAt);
         closedAtRaw.textContent = lap.closedAt || "(ยัง live อยู่)";
 
-        // ใช้ค่า YC ที่โหลดแคชไว้แล้วตอนสร้าง dropdown (ไม่ต้องดึงซ้ำ)
         const ycEntry = ycData[key];
         ycVal1Input.value = ycEntry ? (ycEntry.val1 || "") : "";
         ycVal2Input.value = ycEntry ? (ycEntry.val2 || "") : "";
+    }
+
+    function clearSelection() {
+        selectedKey = null;
+        selectedLapChip.classList.remove("show");
+        editCard.style.display = "none";
+        emptyHintCard.style.display = "block";
+        lapSearchInput.value = "";
+    }
+
+    lapSearchInput.addEventListener("focus", () => renderLapDropdown(lapSearchInput.value));
+    lapSearchInput.addEventListener("input", () => renderLapDropdown(lapSearchInput.value));
+    clearSelectionBtn.addEventListener("click", clearSelection);
+
+    // ปิด dropdown ทุกตัวเมื่อแตะข้างนอก
+    document.addEventListener("click", (e) => {
+        if (!lapSearchWrap.contains(e.target)) lapDropdown.classList.remove("show");
+        if (!ycCombo1.contains(e.target)) ycDropdown1.classList.remove("show");
+        if (!ycCombo2.contains(e.target)) ycDropdown2.classList.remove("show");
+    });
+
+    // ---- โหลดข้อมูล Lap + YC ทั้งหมดมาเตรียมไว้ -----
+    Promise.all([
+        db.ref("/kratom_laps").once("value"),
+        db.ref("/kratom_yc").once("value")
+    ]).then(([lapsSnap, ycSnap]) => {
+        lapsData = lapsSnap.val() || {};
+        ycData = ycSnap.val() || {};
+        allKeys = Object.keys(lapsData).sort().reverse(); // push key เรียงตามเวลาสร้างอยู่แล้ว
+
+        if (allKeys.length === 0) {
+            lapSearchInput.placeholder = "ไม่พบ Lap เลย";
+            lapSearchInput.disabled = true;
+            return;
+        }
+        lapSearchInput.placeholder = `พิมพ์ค้นหาจาก ${allKeys.length} หม้อ...`;
+    }).catch((err) => {
+        lapSearchInput.placeholder = "โหลดข้อมูลไม่สำเร็จ: " + err.message;
+        lapSearchInput.disabled = true;
     });
 
     // อัปเดตตัวเลข epoch ที่โชว์ไว้ให้เห็นแบบสดๆ ตอนแก้ picker
     timeInput.addEventListener("input", () => {
-        const ms = localInputToEpoch(timeInput.value);
-        timeRaw.textContent = ms || "-";
+        timeRaw.textContent = localInputToEpoch(timeInput.value) || "-";
     });
     closedAtInput.addEventListener("input", () => {
-        const ms = localInputToEpoch(closedAtInput.value);
-        closedAtRaw.textContent = ms || "(ยัง live อยู่)";
+        closedAtRaw.textContent = localInputToEpoch(closedAtInput.value) || "(ยัง live อยู่)";
     });
 
     saveBtn.addEventListener("click", () => {
-        const key = lapSelect.value;
+        const key = selectedKey;
         if (!key) return;
 
         const newTime = localInputToEpoch(timeInput.value);
@@ -332,14 +472,11 @@
         }
 
         saveBtn.disabled = true;
-        saveBtn.textContent = "กำลังบันทึก...";
+        saveBtn.innerHTML = "⏳ กำลังบันทึก...";
 
         const updates = { time: newTime };
-        if (newClosedAt) {
-            updates.closedAt = newClosedAt;
-        }
+        if (newClosedAt) updates.closedAt = newClosedAt;
 
-        // เตรียมค่า YC ไว้บันทึกคู่กัน (เก็บเป็น string ให้ตรงรูปแบบเดียวกับที่หน้า Dashboard หลักใช้)
         const ycVal1 = ycVal1Input.value.trim();
         const ycVal2 = ycVal2Input.value.trim();
         const ycUpdates = { val1: ycVal1, val2: ycVal2, updatedAt: Date.now() };
@@ -350,29 +487,23 @@
         ]).then(() => {
             lapsData[key] = { ...lapsData[key], ...updates };
             ycData[key] = ycUpdates;
-            // อัปเดตข้อความใน dropdown ให้ตรงกับ YC ใหม่ทันที ไม่ต้องโหลดหน้าใหม่
-            const opt = lapSelect.querySelector(`option[value="${key}"]`);
-            if (opt) {
-                const lap = lapsData[key];
-                const dateLabel = lap.time ? new Date(lap.time).toLocaleString("th-TH") : "(ไม่มีเวลา)";
-                let ycLabel = "";
-                if (ycVal1 && ycVal2) ycLabel = ` · ยา ${ycVal1},${ycVal2}`;
-                else if (ycVal1) ycLabel = ` · ยา ${ycVal1}`;
-                else if (ycVal2) ycLabel = ` · ยา ${ycVal2}`;
-                opt.textContent = `lap${lap.lapNumber ?? "?"} — ${dateLabel}${ycLabel}`;
-            }
-            showStatus("บันทึกสำเร็จแล้ว ✓ (ทั้งเวลาและ YC)", false);
+
+            // อัปเดต chip ที่เลือกไว้ให้ตรงกับข้อมูลใหม่ทันที
+            const yc = ycLabelOf(key);
+            selectedLapMeta.textContent = dateLabelOf(key) + (yc ? ` · YC ${yc}` : "");
+
+            showStatus("บันทึกสำเร็จแล้ว ✓ (เวลา + YC)", false);
             saveBtn.disabled = false;
-            saveBtn.textContent = "💾 บันทึกการแก้ไข";
+            saveBtn.innerHTML = "💾 บันทึกการแก้ไข";
         }).catch((err) => {
             showStatus("บันทึกไม่สำเร็จ: " + err.message, true);
             saveBtn.disabled = false;
-            saveBtn.textContent = "💾 บันทึกการแก้ไข";
+            saveBtn.innerHTML = "💾 บันทึกการแก้ไข";
         });
     });
 
     clearClosedBtn.addEventListener("click", () => {
-        const key = lapSelect.value;
+        const key = selectedKey;
         if (!key) return;
         if (!confirm("ลบเวลาปิดของ lap นี้ ทำให้กลับไปเป็นสถานะ live?")) return;
 
@@ -380,7 +511,8 @@
             closedAtInput.value = "";
             closedAtRaw.textContent = "(ยัง live อยู่)";
             delete lapsData[key].closedAt;
-            showStatus("ลบเวลาปิดแล้ว", false);
+            selectedLapMeta.textContent = dateLabelOf(key) + (ycLabelOf(key) ? ` · YC ${ycLabelOf(key)}` : "");
+            showStatus("ลบเวลาปิดแล้ว ✓", false);
         }).catch((err) => {
             showStatus("ลบไม่สำเร็จ: " + err.message, true);
         });
