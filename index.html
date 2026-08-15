@@ -103,6 +103,8 @@
     .btn-primary { background: linear-gradient(135deg, var(--green), #4FE0A8); color: #06140c; box-shadow: 0 4px 14px rgba(45,212,238,0.25); }
     .btn-primary:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
     .btn-outline-danger { background: transparent; border: 1px solid rgba(255,107,139,0.4); color: var(--red); margin-top: 10px; }
+    .btn-solid-danger { background: rgba(255,107,139,0.14); border: 1px solid var(--red); color: var(--red); margin-top: 18px; }
+    .btn-solid-danger:hover { background: rgba(255,107,139,0.22); }
 
     /* ---- หน้าจอกรอกรหัส ---- */
     .pass-card { text-align: center; }
@@ -231,6 +233,7 @@
 
             <button class="btn btn-primary" id="saveBtn" style="margin-top: 18px;">💾 บันทึกการแก้ไข</button>
             <button class="btn btn-outline-danger" id="clearClosedBtn">🔄 ลบเวลาปิด (ทำให้กลับเป็น live กินอยู่)</button>
+            <button class="btn btn-solid-danger" id="deleteLapBtn">🗑️ ลบ Lap นี้ทั้งหมด</button>
         </div>
 
         <div class="card" id="emptyHintCard">
@@ -329,6 +332,7 @@
     const ycCombo2 = document.getElementById("ycCombo2");
     const saveBtn = document.getElementById("saveBtn");
     const clearClosedBtn = document.getElementById("clearClosedBtn");
+    const deleteLapBtn = document.getElementById("deleteLapBtn");
     const statusMsg = document.getElementById("statusMsg");
 
     let lapsData = {};
@@ -606,6 +610,37 @@
             showStatus("ลบเวลาปิดแล้ว ✓", false);
         }).catch((err) => {
             showStatus("ลบไม่สำเร็จ: " + err.message, true);
+        });
+    });    deleteLapBtn.addEventListener("click", () => {
+        const key = selectedKey;
+        if (!key) return;
+        const lap = lapsData[key];
+        const lapLabel = `lap${lap.lapNumber ?? "?"} (${dateLabelOf(key)})`;
+
+        if (!confirm(`ลบ ${lapLabel} ทิ้งทั้งหมด?\n\nการลบนี้ลบถาวร กู้คืนไม่ได้ ข้อมูลรอบ/ผู้เล่น/YC ของ lap นี้จะหายไปหมด`)) return;
+        if (!confirm(`ยืนยันอีกครั้ง - แน่ใจจริงๆ ว่าจะลบ ${lapLabel}?`)) return;
+
+        deleteLapBtn.disabled = true;
+        deleteLapBtn.textContent = "⏳ กำลังลบ...";
+
+        Promise.all([
+            db.ref("/kratom_laps/" + key).remove(),
+            db.ref("/kratom_yc/" + key).remove(),
+            db.ref("/kratom_lap_index/" + key).remove()
+        ]).then(() => {
+            delete lapsData[key];
+            delete ycData[key];
+            allKeys = allKeys.filter((k) => k !== key);
+            lapSearchInput.placeholder = `พิมพ์ค้นหาจาก ${allKeys.length} หม้อ...`;
+
+            clearSelection();
+            showStatus(`ลบ ${lapLabel} เรียบร้อยแล้ว ✓`, false);
+            deleteLapBtn.disabled = false;
+            deleteLapBtn.textContent = "🗑️ ลบ Lap นี้ทั้งหมด";
+        }).catch((err) => {
+            showStatus("ลบไม่สำเร็จ: " + err.message, true);
+            deleteLapBtn.disabled = false;
+            deleteLapBtn.textContent = "🗑️ ลบ Lap นี้ทั้งหมด";
         });
     });
 </script>
