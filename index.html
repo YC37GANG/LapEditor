@@ -52,7 +52,7 @@
 
     label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 700; letter-spacing: 0.3px; }
 
-    input[type="text"], input[type="password"], input[type="datetime-local"] {
+    input[type="text"], input[type="password"], input[type="datetime-local"], input[type="date"], input[type="time"] {
         width: 100%;
         background: var(--surface-2);
         border: 1px solid var(--border);
@@ -69,6 +69,10 @@
 
     .field-group { margin-bottom: 16px; }
     .field-group:last-of-type { margin-bottom: 0; }
+
+    .date-time-row { display: flex; gap: 8px; }
+    .date-time-row input[type="date"] { flex: 1.3; padding-left: 10px; padding-right: 6px; }
+    .date-time-row input[type="time"] { flex: 1; padding-left: 10px; padding-right: 6px; }
 
     /* ---- ปุ่ม ---- */
     .btn {
@@ -184,14 +188,20 @@
 
         <div class="card" id="editCard" style="display:none;">
             <div class="field-group">
-                <label for="timeInput">🕐 เวลาเริ่ม</label>
-                <input type="datetime-local" id="timeInput" step="1">
+                <label>🕐 เวลาเริ่ม</label>
+                <div class="date-time-row">
+                    <input type="date" id="timeDateInput">
+                    <input type="time" id="timeTimeInput" step="1">
+                </div>
                 <div class="raw-preview">epoch ms: <span id="timeRaw">-</span></div>
             </div>
 
             <div class="field-group">
-                <label for="closedAtInput">🏁 เวลาปิด (เว้นว่างได้ถ้ายัง live อยู่)</label>
-                <input type="datetime-local" id="closedAtInput" step="1">
+                <label>🏁 เวลาปิด (เว้นว่างได้ถ้ายัง live อยู่)</label>
+                <div class="date-time-row">
+                    <input type="date" id="closedAtDateInput">
+                    <input type="time" id="closedAtTimeInput" step="1">
+                </div>
                 <div class="raw-preview">epoch ms: <span id="closedAtRaw">-</span></div>
             </div>
 
@@ -287,8 +297,10 @@
 
     const editCard = document.getElementById("editCard");
     const emptyHintCard = document.getElementById("emptyHintCard");
-    const timeInput = document.getElementById("timeInput");
-    const closedAtInput = document.getElementById("closedAtInput");
+    const timeDateInput = document.getElementById("timeDateInput");
+    const timeTimeInput = document.getElementById("timeTimeInput");
+    const closedAtDateInput = document.getElementById("closedAtDateInput");
+    const closedAtTimeInput = document.getElementById("closedAtTimeInput");
     const timeRaw = document.getElementById("timeRaw");
     const closedAtRaw = document.getElementById("closedAtRaw");
     const ycVal1Input = document.getElementById("ycVal1Input");
@@ -325,16 +337,24 @@
     ycVal1Input.addEventListener("focus", () => ycDropdown1.classList.add("show"));
     ycVal2Input.addEventListener("focus", () => ycDropdown2.classList.add("show"));
 
-    // แปลง epoch ms -> ค่าสำหรับใส่ใน <input type="datetime-local">
-    function epochToLocalInput(ms) {
+    // แปลง epoch ms -> ค่าสำหรับใส่ใน <input type="date"> (yyyy-mm-dd) และ <input type="time"> (HH:MM:SS)
+    function epochToDateInput(ms) {
         if (!ms) return "";
         const d = new Date(ms);
         const pad = (n) => String(n).padStart(2, "0");
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
-    function localInputToEpoch(value) {
-        if (!value) return null;
-        return new Date(value).getTime();
+    function epochToTimeInput(ms) {
+        if (!ms) return "";
+        const d = new Date(ms);
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    // รวมค่าจากช่องวันที่ + เวลา กลับเป็น epoch ms (ต้องมีวันที่เสมอ ไม่งั้นถือว่าไม่มีค่า)
+    function dateTimeInputsToEpoch(dateVal, timeVal) {
+        if (!dateVal) return null;
+        const t = timeVal || "00:00:00";
+        return new Date(`${dateVal}T${t}`).getTime();
     }
     function showStatus(msg, isError) {
         statusMsg.textContent = msg;
@@ -446,9 +466,11 @@
         editCard.style.display = "block";
         emptyHintCard.style.display = "none";
 
-        timeInput.value = epochToLocalInput(lap.time);
+        timeDateInput.value = epochToDateInput(lap.time);
+        timeTimeInput.value = epochToTimeInput(lap.time);
         timeRaw.textContent = lap.time || "-";
-        closedAtInput.value = epochToLocalInput(lap.closedAt);
+        closedAtDateInput.value = epochToDateInput(lap.closedAt);
+        closedAtTimeInput.value = epochToTimeInput(lap.closedAt);
         closedAtRaw.textContent = lap.closedAt || "(ยัง live อยู่)";
 
         const ycEntry = ycData[key];
@@ -495,20 +517,24 @@
         lapSearchInput.disabled = true;
     });
 
-    // อัปเดตตัวเลข epoch ที่โชว์ไว้ให้เห็นแบบสดๆ ตอนแก้ปฏิทิน
-    timeInput.addEventListener("input", () => {
-        timeRaw.textContent = localInputToEpoch(timeInput.value) || "-";
-    });
-    closedAtInput.addEventListener("input", () => {
-        closedAtRaw.textContent = localInputToEpoch(closedAtInput.value) || "(ยัง live อยู่)";
-    });
+    // อัปเดตตัวเลข epoch ที่โชว์ไว้ให้เห็นแบบสดๆ ตอนแก้ช่องวันที่/เวลา
+    function updateTimeRaw() {
+        timeRaw.textContent = dateTimeInputsToEpoch(timeDateInput.value, timeTimeInput.value) || "-";
+    }
+    function updateClosedAtRaw() {
+        closedAtRaw.textContent = dateTimeInputsToEpoch(closedAtDateInput.value, closedAtTimeInput.value) || "(ยัง live อยู่)";
+    }
+    timeDateInput.addEventListener("input", updateTimeRaw);
+    timeTimeInput.addEventListener("input", updateTimeRaw);
+    closedAtDateInput.addEventListener("input", updateClosedAtRaw);
+    closedAtTimeInput.addEventListener("input", updateClosedAtRaw);
 
     saveBtn.addEventListener("click", () => {
         const key = selectedKey;
         if (!key) return;
 
-        const newTime = localInputToEpoch(timeInput.value);
-        const newClosedAt = localInputToEpoch(closedAtInput.value);
+        const newTime = dateTimeInputsToEpoch(timeDateInput.value, timeTimeInput.value);
+        const newClosedAt = dateTimeInputsToEpoch(closedAtDateInput.value, closedAtTimeInput.value);
 
         if (!newTime) {
             showStatus("ต้องมีเวลาเริ่มเสมอ ห้ามเว้นว่าง", true);
@@ -556,7 +582,8 @@
         if (!confirm("ลบเวลาปิดของ lap นี้ ทำให้กลับไปเป็นสถานะ live?")) return;
 
         db.ref("/kratom_laps/" + key + "/closedAt").remove().then(() => {
-            closedAtInput.value = "";
+            closedAtDateInput.value = "";
+            closedAtTimeInput.value = "";
             closedAtRaw.textContent = "(ยัง live อยู่)";
             delete lapsData[key].closedAt;
             selectedLapMeta.textContent = dateLabelOf(key) + (ycLabelOf(key) ? ` · ยา ${ycLabelOf(key)}` : "");
