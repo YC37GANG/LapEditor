@@ -70,19 +70,6 @@
     .field-group { margin-bottom: 16px; }
     .field-group:last-of-type { margin-bottom: 0; }
 
-    /* ---- ช่อง dd/mm/yyyy ของเราเอง คลุมปฏิทิน native ไว้ข้างใต้ (คุมฟอร์แมตได้เต็มที่ ไม่ขึ้นกับ locale เครื่อง) ---- */
-    .datetime-wrap { position: relative; }
-    .datetime-wrap input[readonly] { cursor: pointer; background: var(--surface-2); }
-    .datetime-wrap input.datetime-hidden-trigger {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-        pointer-events: none;
-        border: none;
-        padding: 0;
-    }
-
     /* ---- ปุ่ม ---- */
     .btn {
         width: 100%;
@@ -197,20 +184,14 @@
 
         <div class="card" id="editCard" style="display:none;">
             <div class="field-group">
-                <label for="timeDisplay">🕐 เวลาเริ่ม</label>
-                <div class="datetime-wrap">
-                    <input type="text" id="timeDisplay" readonly placeholder="dd/mm/yyyy --:--:--">
-                    <input type="datetime-local" id="timeInput" step="1" class="datetime-hidden-trigger">
-                </div>
+                <label for="timeInput">🕐 เวลาเริ่ม</label>
+                <input type="datetime-local" id="timeInput" step="1">
                 <div class="raw-preview">epoch ms: <span id="timeRaw">-</span></div>
             </div>
 
             <div class="field-group">
-                <label for="closedAtDisplay">🏁 เวลาปิด (เว้นว่างได้ถ้ายัง live อยู่)</label>
-                <div class="datetime-wrap">
-                    <input type="text" id="closedAtDisplay" readonly placeholder="dd/mm/yyyy --:--:-- (ยัง live อยู่)">
-                    <input type="datetime-local" id="closedAtInput" step="1" class="datetime-hidden-trigger">
-                </div>
+                <label for="closedAtInput">🏁 เวลาปิด (เว้นว่างได้ถ้ายัง live อยู่)</label>
+                <input type="datetime-local" id="closedAtInput" step="1">
                 <div class="raw-preview">epoch ms: <span id="closedAtRaw">-</span></div>
             </div>
 
@@ -308,20 +289,6 @@
     const emptyHintCard = document.getElementById("emptyHintCard");
     const timeInput = document.getElementById("timeInput");
     const closedAtInput = document.getElementById("closedAtInput");
-    const timeDisplay = document.getElementById("timeDisplay");
-    const closedAtDisplay = document.getElementById("closedAtDisplay");
-
-    // v4: FIX - เปิดปฏิทินด้วย showPicker() ตรงๆ แทนการซ่อนด้วย CSS แล้วหวังให้คลิกทะลุ
-    // (วิธีเดิมมีปัญหากับมือถือบางรุ่นโดยเฉพาะ iOS จนกดเปิดไม่ได้เลย)
-    function openNativePicker(nativeInput) {
-        if (typeof nativeInput.showPicker === "function") {
-            try { nativeInput.showPicker(); return; } catch (e) { /* บาง browser ยัง fallback ต่อได้ */ }
-        }
-        // fallback สำหรับ browser ที่ไม่รองรับ showPicker() (Safari รุ่นเก่ากว่า 16.4)
-        nativeInput.focus();
-    }
-    timeDisplay.addEventListener("click", () => openNativePicker(timeInput));
-    closedAtDisplay.addEventListener("click", () => openNativePicker(closedAtInput));
     const timeRaw = document.getElementById("timeRaw");
     const closedAtRaw = document.getElementById("closedAtRaw");
     const ycVal1Input = document.getElementById("ycVal1Input");
@@ -364,13 +331,6 @@
         const d = new Date(ms);
         const pad = (n) => String(n).padStart(2, "0");
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-    // แปลง epoch ms -> ข้อความ dd/mm/yyyy HH:MM:SS สำหรับช่องแสดงผลของเราเอง (คุมฟอร์แมตเอง ไม่ขึ้นกับ locale เครื่อง)
-    function epochToDDMMYYYY(ms) {
-        if (!ms) return "";
-        const d = new Date(ms);
-        const pad = (n) => String(n).padStart(2, "0");
-        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
     function localInputToEpoch(value) {
         if (!value) return null;
@@ -487,10 +447,8 @@
         emptyHintCard.style.display = "none";
 
         timeInput.value = epochToLocalInput(lap.time);
-        timeDisplay.value = epochToDDMMYYYY(lap.time);
         timeRaw.textContent = lap.time || "-";
         closedAtInput.value = epochToLocalInput(lap.closedAt);
-        closedAtDisplay.value = lap.closedAt ? epochToDDMMYYYY(lap.closedAt) : "";
         closedAtRaw.textContent = lap.closedAt || "(ยัง live อยู่)";
 
         const ycEntry = ycData[key];
@@ -537,16 +495,12 @@
         lapSearchInput.disabled = true;
     });
 
-    // อัปเดตตัวเลข epoch + ช่องแสดงผล dd/mm/yyyy ให้เห็นแบบสดๆ ทุกครั้งที่แก้ผ่านปฏิทิน
+    // อัปเดตตัวเลข epoch ที่โชว์ไว้ให้เห็นแบบสดๆ ตอนแก้ปฏิทิน
     timeInput.addEventListener("input", () => {
-        const ms = localInputToEpoch(timeInput.value);
-        timeRaw.textContent = ms || "-";
-        timeDisplay.value = epochToDDMMYYYY(ms);
+        timeRaw.textContent = localInputToEpoch(timeInput.value) || "-";
     });
     closedAtInput.addEventListener("input", () => {
-        const ms = localInputToEpoch(closedAtInput.value);
-        closedAtRaw.textContent = ms || "(ยัง live อยู่)";
-        closedAtDisplay.value = ms ? epochToDDMMYYYY(ms) : "";
+        closedAtRaw.textContent = localInputToEpoch(closedAtInput.value) || "(ยัง live อยู่)";
     });
 
     saveBtn.addEventListener("click", () => {
@@ -603,7 +557,6 @@
 
         db.ref("/kratom_laps/" + key + "/closedAt").remove().then(() => {
             closedAtInput.value = "";
-            closedAtDisplay.value = "";
             closedAtRaw.textContent = "(ยัง live อยู่)";
             delete lapsData[key].closedAt;
             selectedLapMeta.textContent = dateLabelOf(key) + (ycLabelOf(key) ? ` · ยา ${ycLabelOf(key)}` : "");
